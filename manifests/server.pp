@@ -18,6 +18,7 @@ class mysql::server (
   $users                   = {},
   $grants                  = {},
   $databases               = {},
+  $iptables_allow          = hiera(client_nets),
 
   # Deprecated parameters
   $enabled                 = undef,
@@ -48,6 +49,13 @@ class mysql::server (
   include '::mysql::server::service'
   include '::mysql::server::root_password'
   include '::mysql::server::providers'
+
+  if !defined(iptables::add_tcp_stateful_listen['allow_mysql']){
+    iptables::add_tcp_stateful_listen { 'allow_mysql':
+      client_nets => $iptables_allow,
+      dports      => $mysql::params::iptables_port
+    }
+  }
 
   if $remove_default_accounts {
     class { '::mysql::server::account_security':
